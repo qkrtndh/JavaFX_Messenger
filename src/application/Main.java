@@ -1,6 +1,5 @@
 package application;
 	
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,9 +9,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.Font;
 
 
 public class Main extends Application {
@@ -102,9 +106,62 @@ public class Main extends Application {
 	
 	
 	//UI를 생성하고 프로그램을 실질적으로 구동하는 메소드
+	//javafx는 fxml이라는 디자인 코드를 사용함
+	//다운받은 javafx scene builder가 java fxml과 css를 관리하는 툴
+	//이번 프로젝트에서는 scene builder없이 코드로 작성하여 구현함
+	
+	//대부분의 import는 javafx로부터 한다.
 	@Override
 	public void start(Stage primaryStage) {
+		//전체 디자인을 담을 수 있는 pane 생성(layout을 생성한다고 생각)
+		BorderPane root = new BorderPane();
 		
+		//내부에 5만큼 padding을 준다.
+		root.setPadding(new Insets(5));
+		
+		TextArea textArea = new TextArea();
+		textArea.setEditable(false);
+		textArea.setFont(new Font("맑은 고딕",15));
+		
+		root.setCenter(textArea);
+		
+		Button toggleButton = new Button("시작하기");
+		toggleButton.setMaxWidth(Double.MAX_VALUE);
+		//borderpane에 마진을 줌
+		BorderPane.setMargin(toggleButton,new Insets(1,0,0,0));
+		root.setBottom(toggleButton);
+		
+		String IP = "127.0.0.1";
+		int port = 9876;
+		
+		toggleButton.setOnAction(event->{
+			if(toggleButton.getText().equals("시작하기")) {
+				startServer(IP,port);
+				//javafx는 버튼 클릭 후 바로 textarea에 반영되는 것이 아니라
+				//runlater같은 메소드를 이용해서  gui요소를 출력하도록해야한다.
+				Platform.runLater(()->{
+					//문자열 생성
+					String message = String.format("[서버시작]\n",IP,port);
+					textArea.appendText(message);
+					toggleButton.setText("종료하기");
+				});
+			}
+			else {
+				stopServer();
+				Platform.runLater(()->{
+					String message = String.format("[서버종료]\n",IP,port);
+					textArea.appendText(message);
+					toggleButton.setText("시작하기");
+				});
+			}
+		});
+		
+		//화면 크기 구성
+		Scene scene = new Scene(root,400,400);
+		primaryStage.setTitle("[채팅서버]");
+		primaryStage.setOnCloseRequest(event->stopServer());
+		primaryStage.setScene(scene);
+		primaryStage.show();
 	}
 	
 	
